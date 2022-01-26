@@ -36,7 +36,6 @@ class PortControl {
 	* @return {Promise<Mapping>} A promise for the port mapping object
 	*                            Mapping.externalPort === -1 on failure
 	**/
-
 	addMapping(intPort, extPort, lifetime) {
 		var _this = this;
 	
@@ -72,6 +71,10 @@ class PortControl {
 				return failureMapping;
 			}
 		}
+	}
+
+	async asyncPF(int, ext, life) {
+		return addMapping(int, ext, life);
 	}
 
 	/** Delete the port mapping locally and from the router (and stop refreshes)
