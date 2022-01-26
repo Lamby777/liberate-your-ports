@@ -278,5 +278,5 @@ function sendPcpRequest(routerIp, privateIp, intPort, extPort,
 export {
 	probeSupport,
 	addMapping,
-	deleteMapping
+	deleteMapping,
 };

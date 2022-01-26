@@ -1,7 +1,7 @@
 {
 	"name": "liberate-your-ports",
 	"description": "Opens ports through a NAT with NAT-PMP, PCP, and UPnP",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"author": "Dex <sheepareawesome777@gmail.com>",
 	"repository": {
 		"type": "git",
