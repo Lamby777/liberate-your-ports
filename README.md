@@ -1,4 +1,8 @@
-# freedom.js Port Control
+# Liberate Your Ports!
+
+The original devs of
+[`freedom-port-control`](https://github.com/freedomjs/freedom-port-control)
+haven't been active for 7 years, so I decided to keep their code up-to-date.
 
 Opens ports through a NAT with NAT-PMP, PCP, and UPnP.
 
