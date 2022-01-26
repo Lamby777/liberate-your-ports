@@ -143,20 +143,20 @@ function addMapping(intPort, extPort, lifetime,
 * @param {Array<string>} routerIpCache Router IPs that have previously worked
 * @return {Promise<boolean>} True on success, false on failure
 */
-var deleteMapping = function(extPort, activeMappings, routerIpCache) {
+function deleteMapping(extPort, activeMappings, routerIpCache) {
 	// Send NAT-PMP requests to a list of router IPs and parse the first response
 	function _sendDeletionRequests(routerIps) {
-		return new Promise(function(F, R) {
+		return new Promise((F, R) => {
 			// Retrieve internal port of this mapping; this may error
 			F(activeMappings[extPort].internalPort);
-		}).then(function(intPort) {
+		}).then((intPort) => {
 			// Construct an array of ArrayBuffers, which are the responses of
 			// sendPmpRequest() calls on all the router IPs. An error result
 			// is caught and re-passed as null.
-			return Promise.all(routerIps.map(function(routerIp) {
+			return Promise.all(routerIps.map((routerIp) => {
 				return sendPmpRequest(routerIp, intPort, 0, 0).
-					then(function(pmpResponse) { return pmpResponse; }).
-					catch(function(err) { return null; });
+					then((pmpResponse) => pmpResponse).
+					catch((err) => null);
 			}));
 		});
 	}
