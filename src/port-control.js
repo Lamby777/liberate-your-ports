@@ -1,12 +1,13 @@
-var ipaddr = require('ipaddr.js');
-var utils = require('./utils');
-var natPmp = require('./nat-pmp');
-var pcp = require('./pcp');
-var upnp = require('./upnp');
+//import * as ipaddr	from "ipaddr.js";
+import * as utils from "./utils";
+import * as natPmp from "./nat-pmp";
+import * as pcp from "./pcp";
+import * as upnp from "./upnp";
 
-var PortControl = function (dispatchEvent) {
-  this.dispatchEvent = dispatchEvent;
-};
+// change this to class later
+function PortControl(dispatchEvent) {
+	this.dispatchEvent = dispatchEvent;
+}
 
 /**
 * A table that keeps track of information about active Mappings
@@ -16,7 +17,7 @@ var PortControl = function (dispatchEvent) {
 *   ...
 * }
 */
-PortControl.prototype.activeMappings = {};
+PortControl.prototype.activeMappings = {}
 
 /**
  * An array of previous router IPs that have worked; we try these first when 
@@ -33,11 +34,11 @@ PortControl.prototype.routerIpCache = [];
   * @property {string} [upnpControlUrl] The UPnP router's control URL
  */
 PortControl.prototype.protocolSupportCache = {
-  natPmp: undefined,
-  pcp: undefined,
-  upnp: undefined,
-  upnpControlUrl: undefined
-};
+	natPmp: undefined,
+	pcp: undefined,
+	upnp: undefined,
+	upnpControlUrl: undefined
+}
 
 /**
 * Add a port mapping through the NAT, using a protocol that probeProtocolSupport()
@@ -52,42 +53,41 @@ PortControl.prototype.protocolSupportCache = {
 * @return {Promise<Mapping>} A promise for the port mapping object
 *                            Mapping.externalPort === -1 on failure
 **/
-PortControl.prototype.addMapping = function (intPort, extPort, lifetime) {
-  var _this = this;
+PortControl.prototype.addMapping = function(intPort, extPort, lifetime) {
+	var _this = this;
 
-  if (_this.protocolSupportCache.natPmp === undefined) {
-    // We have no data in the protocolSupportCache,
-    // so try to open a port with NAT-PMP, then PCP, then UPnP in that order
-    return _this.addMappingPmp(intPort, extPort, lifetime).
-      then(function (mapping) {
-        if (mapping.externalPort !== -1) { 
-          return mapping; 
-        }
-        return _this.addMappingPcp(intPort, extPort, lifetime);
-      }).
-      then(function (mapping) {
-        if (mapping.externalPort !== -1) { 
-          return mapping; 
-        }
-        return _this.addMappingUpnp(intPort, extPort, lifetime);
-      });
-  } else {
-    // We have data from probing the router for protocol support,
-    // so we can directly try one protocol, or return a failure Mapping
-    if (_this.protocolSupportCache.natPmp) {
-      return _this.addMappingPmp(intPort, extPort, lifetime);
-    } else if (_this.protocolSupportCache.pcp) {
-      return _this.addMappingPcp(intPort, extPort, lifetime);
-    } else if (_this.protocolSupportCache.upnp) {
-      return _this.addMappingUpnp(intPort, extPort, lifetime,
-                                  _this.protocolSupportCache.upnpControlUrl);
-    } else {
-      var failureMapping = new utils.Mapping();
-      failureMapping.errInfo = "No protocols are supported from last probe";
-      return failureMapping;
-    }
-  }
-};
+	if (_this.protocolSupportCache.natPmp === undefined) {
+		// We have no data in the protocolSupportCache,
+		// so try to open a port with NAT-PMP, then PCP, then UPnP in that order
+		return _this.addMappingPmp(intPort, extPort, lifetime)
+			.then((mapping) => {
+				if (mapping.externalPort !== -1) {
+					return mapping;
+				}
+				return _this.addMappingPcp(intPort, extPort, lifetime);
+			}).then((mapping) => {
+				if (mapping.externalPort !== -1) {
+					return mapping;
+				}
+				return _this.addMappingUpnp(intPort, extPort, lifetime);
+			});
+	} else {
+		// We have data from probing the router for protocol support,
+		// so we can directly try one protocol, or return a failure Mapping
+		if (_this.protocolSupportCache.natPmp) {
+			return _this.addMappingPmp(intPort, extPort, lifetime);
+		} else if (_this.protocolSupportCache.pcp) {
+			return _this.addMappingPcp(intPort, extPort, lifetime);
+		} else if (_this.protocolSupportCache.upnp) {
+			return _this.addMappingUpnp(intPort, extPort, lifetime,
+				_this.protocolSupportCache.upnpControlUrl);
+		} else {
+			var failureMapping = new utils.Mapping();
+			failureMapping.errInfo = "No protocols are supported from last probe";
+			return failureMapping;
+		}
+	}
+}
 
 /**
 * Delete the port mapping locally and from the router (and stop refreshes)
@@ -97,13 +97,13 @@ PortControl.prototype.addMapping = function (intPort, extPort, lifetime) {
 * @param {number} extPort The external port of the mapping to delete
 * @return {Promise<boolean>} True on success, false on failure
 **/
-PortControl.prototype.deleteMapping = function (extPort) {
-  var mapping = this.activeMappings[extPort];
-  if (mapping === undefined) { 
-    return Promise.resolve(false); 
-  }
-  return mapping.deleter();
-};
+PortControl.prototype.deleteMapping = function(extPort) {
+	var mapping = this.activeMappings[extPort];
+	if (mapping === undefined) {
+		return Promise.resolve(false);
+	}
+	return mapping.deleter();
+}
 
 /**
 * Probes the NAT for NAT-PMP, PCP, and UPnP support,
@@ -113,23 +113,23 @@ PortControl.prototype.deleteMapping = function (extPort) {
 * @method probeProtocolSupport
 * @return {Promise<{"natPmp": boolean, "pcp": boolean, "upnp": boolean}>}
 */
-PortControl.prototype.probeProtocolSupport = function () {
-  var _this = this;
+PortControl.prototype.probeProtocolSupport = function() {
+	var _this = this;
 
-  return Promise.all([this.probePmpSupport(), this.probePcpSupport(),
-    this.probeUpnpSupport(), this.getUpnpControlUrl()]).then(function (support) {
-      _this.protocolSupportCache.natPmp = support[0];
-      _this.protocolSupportCache.pcp = support[1];
-      _this.protocolSupportCache.upnp = support[2];
-      _this.protocolSupportCache.upnpControlUrl = support[3];
+	return Promise.all([this.probePmpSupport(), this.probePcpSupport(),
+	this.probeUpnpSupport(), this.getUpnpControlUrl()]).then((support) => {
+		_this.protocolSupportCache.natPmp = support[0];
+		_this.protocolSupportCache.pcp = support[1];
+		_this.protocolSupportCache.upnp = support[2];
+		_this.protocolSupportCache.upnpControlUrl = support[3];
 
-      return {
-        natPmp: support[0],
-        pcp: support[1],
-        upnp: support[2]
-      };
-    });
-};
+		return {
+			natPmp: support[0],
+			pcp: support[1],
+			upnp: support[2]
+		}
+	});
+}
 
 /**
 * Probe if NAT-PMP is supported by the router
@@ -137,9 +137,9 @@ PortControl.prototype.probeProtocolSupport = function () {
 * @method probePmpSupport
 * @return {Promise<boolean>} A promise for a boolean
 */
-PortControl.prototype.probePmpSupport = function () {
-  return natPmp.probeSupport(this.activeMappings, this.routerIpCache);
-};
+PortControl.prototype.probePmpSupport = function() {
+	return natPmp.probeSupport(this.activeMappings, this.routerIpCache);
+}
 
 /**
 * Makes a port mapping in the NAT with NAT-PMP,
@@ -153,10 +153,10 @@ PortControl.prototype.probePmpSupport = function () {
 * @return {Promise<Mapping>} A promise for the port mapping object
 *                            Mapping.externalPort === -1 on failure
 */
-PortControl.prototype.addMappingPmp = function (intPort, extPort, lifetime) {
-  return natPmp.addMapping(intPort, extPort, lifetime, this.activeMappings,
-                           this.routerIpCache);
-};
+PortControl.prototype.addMappingPmp = function(intPort, extPort, lifetime) {
+	return natPmp.addMapping(intPort, extPort, lifetime, this.activeMappings,
+		this.routerIpCache);
+}
 
 /**
 * Deletes a port mapping in the NAT with NAT-PMP
@@ -166,13 +166,13 @@ PortControl.prototype.addMappingPmp = function (intPort, extPort, lifetime) {
 * @param {number} extPort The external port of the mapping to delete
 * @return {Promise<boolean>} True on success, false on failure
 */
-PortControl.prototype.deleteMappingPmp = function (extPort) {
-  var mapping = this.activeMappings[extPort];
-  if (mapping === undefined || mapping.protocol !== 'natPmp') { 
-    return Promise.resolve(false); 
-  }
-  return mapping.deleter();
-};
+PortControl.prototype.deleteMappingPmp = function(extPort) {
+	var mapping = this.activeMappings[extPort];
+	if (mapping === undefined || mapping.protocol !== 'natPmp') {
+		return Promise.resolve(false);
+	}
+	return mapping.deleter();
+}
 
 /**
 * Probe if PCP is supported by the router
@@ -180,9 +180,9 @@ PortControl.prototype.deleteMappingPmp = function (extPort) {
 * @method probePcpSupport
 * @return {Promise<boolean>} A promise for a boolean
 */
-PortControl.prototype.probePcpSupport = function () {
-  return pcp.probeSupport(this.activeMappings, this.routerIpCache);
-};
+PortControl.prototype.probePcpSupport = function() {
+	return pcp.probeSupport(this.activeMappings, this.routerIpCache);
+}
 
 /**
 * Makes a port mapping in the NAT with PCP,
@@ -196,10 +196,10 @@ PortControl.prototype.probePcpSupport = function () {
 * @return {Promise<Mapping>} A promise for the port mapping object 
 *                            mapping.externalPort is -1 on failure
 */
-PortControl.prototype.addMappingPcp = function (intPort, extPort, lifetime) {
-  return pcp.addMapping(intPort, extPort, lifetime, this.activeMappings,
-                        this.routerIpCache);
-};
+PortControl.prototype.addMappingPcp = function(intPort, extPort, lifetime) {
+	return pcp.addMapping(intPort, extPort, lifetime, this.activeMappings,
+		this.routerIpCache);
+}
 
 /**
 * Deletes a port mapping in the NAT with PCP
@@ -209,13 +209,13 @@ PortControl.prototype.addMappingPcp = function (intPort, extPort, lifetime) {
 * @param {number} extPort The external port of the mapping to delete
 * @return {Promise<boolean>} True on success, false on failure
 */
-PortControl.prototype.deleteMappingPcp = function (extPort) {
-  var mapping = this.activeMappings[extPort];
-  if (mapping === undefined || mapping.protocol !== 'pcp') { 
-    return Promise.resolve(false); 
-  }
-  return mapping.deleter();
-};
+PortControl.prototype.deleteMappingPcp = function(extPort) {
+	var mapping = this.activeMappings[extPort];
+	if (mapping === undefined || mapping.protocol !== 'pcp') {
+		return Promise.resolve(false);
+	}
+	return mapping.deleter();
+}
 
 /**
 * Probe if UPnP AddPortMapping is supported by the router
@@ -223,9 +223,9 @@ PortControl.prototype.deleteMappingPcp = function (extPort) {
 * @method probeUpnpSupport
 * @return {Promise<boolean>} A promise for a boolean
 */
-PortControl.prototype.probeUpnpSupport = function () {
-  return upnp.probeSupport(this.activeMappings);
-};
+PortControl.prototype.probeUpnpSupport = function() {
+	return upnp.probeSupport(this.activeMappings);
+}
 
 /**
 * Makes a port mapping in the NAT with UPnP AddPortMapping
@@ -239,11 +239,11 @@ PortControl.prototype.probeUpnpSupport = function () {
 * @return {Promise<Mapping>} A promise for the port mapping object 
 *                               mapping.externalPort is -1 on failure
 */
-PortControl.prototype.addMappingUpnp = function (intPort, extPort, lifetime,
-                                                 controlUrl) {
-  return upnp.addMapping(intPort, extPort, lifetime, this.activeMappings,
-                         controlUrl);
-};
+PortControl.prototype.addMappingUpnp = function(intPort, extPort,
+												lifetime, controlUrl) {
+	return upnp.addMapping(intPort, extPort, lifetime,
+						   this.activeMappings, controlUrl);
+}
 
 /**
 * Deletes a port mapping in the NAT with UPnP DeletePortMapping
@@ -253,12 +253,12 @@ PortControl.prototype.addMappingUpnp = function (intPort, extPort, lifetime,
 * @param {number} extPort The external port of the mapping to delete
 * @return {Promise<boolean>} True on success, false on failure
 */
-PortControl.prototype.deleteMappingUpnp = function (extPort) {
-  var mapping = this.activeMappings[extPort];
-  if (mapping === undefined || mapping.protocol !== 'upnp') { 
-    return Promise.resolve(false); 
-  }
-  return mapping.deleter();
+PortControl.prototype.deleteMappingUpnp = function(extPort) {
+	var mapping = this.activeMappings[extPort];
+	if (mapping === undefined || mapping.protocol !== 'upnp') {
+		return Promise.resolve(false);
+	}
+	return mapping.deleter();
 };
 
 /**
@@ -267,8 +267,8 @@ PortControl.prototype.deleteMappingUpnp = function (extPort) {
  * @method getUpnpControlUrl
  * @return {Promise<string>} A promise for the URL, empty string if not supported
  */
-PortControl.prototype.getUpnpControlUrl = function () {
-  return upnp.getUpnpControlUrl();
+PortControl.prototype.getUpnpControlUrl = function() {
+	return upnp.getUpnpControlUrl();
 };
 
 /**
@@ -277,8 +277,8 @@ PortControl.prototype.getUpnpControlUrl = function () {
 * @method getActiveMappings
 * @return {Promise<activeMappings>} A promise that resolves to activeMappings
 */
-PortControl.prototype.getActiveMappings = function () {
-  return Promise.resolve(this.activeMappings);
+PortControl.prototype.getActiveMappings = function() {
+	return Promise.resolve(this.activeMappings);
 };
 
 /**
@@ -287,9 +287,9 @@ PortControl.prototype.getActiveMappings = function () {
 * @method getRouterIpCache
 * @return {Promise<Array<string>>} A promise that resolves to routerIpCache
 */
-PortControl.prototype.getRouterIpCache = function () {
-  return Promise.resolve(this.routerIpCache);
-};
+PortControl.prototype.getRouterIpCache = function() {
+	return Promise.resolve(this.routerIpCache);
+}
 
 /**
  * Return the protocol support cache
@@ -297,9 +297,9 @@ PortControl.prototype.getRouterIpCache = function () {
  * @method getProtocolSupportCache
  * @return {Promise<protocolSupportCache>} A promise that resolves to protocolSupportCache
  */
-PortControl.prototype.getProtocolSupportCache = function () {
-  return Promise.resolve(this.protocolSupportCache);
-};
+PortControl.prototype.getProtocolSupportCache = function() {
+	return Promise.resolve(this.protocolSupportCache);
+}
 
 /**
 * Return the private IP addresses of the computer
@@ -308,34 +308,32 @@ PortControl.prototype.getProtocolSupportCache = function () {
 * @return {Promise<Array<string>>} A promise that fulfills with a list of IPs,
 *                                  or rejects on timeout
 */
-PortControl.prototype.getPrivateIps = function () {
-  return utils.getPrivateIps();
-};
+PortControl.prototype.getPrivateIps = function() {
+	return utils.getPrivateIps();
+}
 
 /**
 * Deletes all the currently active port mappings
 * @public
 * @method close
 */
-PortControl.prototype.close = function () {
-  var _this = this;
+PortControl.prototype.close = function() {
+	var _this = this;
 
-  return new Promise(function (F, R) {
-    // Get all the keys (extPorts) of activeMappings
-    var extPorts = [];
-    for (var extPort in _this.activeMappings) {
-      if (_this.activeMappings.hasOwnProperty(extPort)) {
-        extPorts.push(extPort);
-      }
-    }
+	return new Promise((F, R) => {
+		// Get all the keys (extPorts) of activeMappings
+		var extPorts = [];
+		_this.activeMappings.forEach((_, extPort) => {
+			if (Object.hasOwn(_this.activeMappings, extPort)) {
+				extPorts.push(extPort);
+			}
+		});
 
-    // Delete them all
-    Promise.all(extPorts.map(_this.deleteMapping.bind(_this))).then(function () {
-      F();
-    });
-  });
-};
-
-if (typeof freedom !== 'undefined') {
-  freedom().providePromises(PortControl);
+		// Delete them all
+		Promise.all(extPorts.map(_this.deleteMapping.bind(_this)))
+			.then(() => { F(); }
+		);
+	});
 }
+
+if (typeof freedom !== 'undefined') freedom().providePromises(PortControl);
