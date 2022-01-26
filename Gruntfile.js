@@ -47,7 +47,8 @@ module.exports = function(grunt) {
 		jshint: {
 			all: ['src/**/*.js'],
 			options: {
-				jshintrc: true
+				jshintrc: true,
+				esversion: 6,
 			}
 		},
 
@@ -60,8 +61,8 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 
 	grunt.registerTask('build', [
-		'jshint',
-		'browserify',
+		//'jshint',
+		//'browserify',
 		'copy',
 	]);
 	grunt.registerTask('default', [
