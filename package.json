@@ -1,6 +1,6 @@
 {
 	"name": "liberate-your-ports",
-	"description": "Opens ports through a NAT with NAT-PMP, PCP, and UPnP",
+	"description": "Port forward request abstraction layer (Updated fork of freedom-port-control)",
 	"version": "1.0.3",
 	"author": "Dex <sheepareawesome777@gmail.com>",
 	"repository": {
