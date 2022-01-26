@@ -1,8 +1,8 @@
 //import * as ipaddr	from "ipaddr.js";
-import * as utils from "./utils";
-import * as natPmp from "./nat-pmp";
-import * as pcp from "./pcp";
-import * as upnp from "./upnp";
+import * as utils	from "./utils";
+import * as natPmp	from "./nat-pmp";
+import * as pcp		from "./pcp";
+import * as upnp	from "./upnp";
 
 class PortControl {
 	constructor(dispatchEvent) {

@@ -1,2 +1,2 @@
 language = "nodejs"
-run = "npx grunt build"
+run = "npm run build"

@@ -11,7 +11,6 @@
 		"freedom": "^0.6.21",
 		"freedom-for-chrome": "^0.4.15",
 		"freedom-for-firefox": "^0.6.9",
-		"grunt": "^1.4.1",
 		"grunt-browserify": "^6.0.0",
 		"grunt-contrib-clean": "^2.0.0",
 		"grunt-contrib-copy": "^1.0.0",
@@ -29,7 +28,8 @@
 		"pcp"
 	],
 	"scripts": {
-		"start": "npx grunt build",
+		"start": "npm run build",
+		"build": "tsc -p ./src",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	}
 }

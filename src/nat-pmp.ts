@@ -65,7 +65,7 @@ function addMapping(intPort, extPort, lifetime,
 				}
 					
 				return routerIntIp;
-			}
+			});
 			// Find the longest prefix match for all the client's internal IPs with
 			// the router IP. This was the internal IP for the new mapping. (We want
 			// to identify which network interface the socket bound to, since NAT-PMP

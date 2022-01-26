@@ -9,8 +9,8 @@ Opens ports through a NAT with NAT-PMP, PCP, and UPnP.
 ## Build
 
 ```
-npm install
-grunt build
+npm i
+npm run build
 ```
 
 This will build the module file at `build/port-control.js` and a demo Chrome app in `build/demo_chrome_app/`.
