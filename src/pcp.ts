@@ -1,5 +1,5 @@
-import * as utils from "./utils";
-//import * as ipaddr		from "ipaddr.js";
+import * as utils		from "./utils";
+import * as ipaddr		from "ipaddr.js";
 
 /**
 * Probe if PCP is supported by the router
@@ -206,7 +206,7 @@ function deleteMapping(extPort, activeMappings, routerIpCache) {
 	return _sendDeletionRequestsInWaves().
 		then(_deleteFromActiveMappings).
 		catch((err) => false);
-};
+}
 
 /**
 * Send a PCP request to the router to map a port

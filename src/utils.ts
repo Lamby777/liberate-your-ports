@@ -1,4 +1,5 @@
-import * as ipaddr from "./ipaddr.js";
+import * as ipaddr	from "ipaddr.js";
+import * as freedom	from "freedom"
 
 /**
 * List of popular router default IPs
@@ -35,12 +36,12 @@ const UPNP_PROBE_PORT = 55557;
 * @property {string} errInfo Error message if failure; currently used only for UPnP 
 */
 class Mapping {
+	public internalIp:		string;
+	public externalIp:		string;
+	public internalPort:	number;
+	public externalPort:	number		= -1;
+	public lifetime:		number;
 	constructor() {
-		this.internalIp = undefined;
-		this.internalPort = undefined;
-		this.externalIp = undefined;
-		this.externalPort = -1;
-		this.lifetime = undefined;
 		this.protocol = undefined;
 		this.timeoutId = undefined;
 		this.nonce = undefined;
@@ -57,7 +58,7 @@ class Mapping {
 *                           or rejects on timeout
 */
 function getPrivateIps() {
-	var privateIps = [];
+	var privateIps: string[] = [];
 	var pc = freedom['core.rtcpeerconnection']({ iceServers: [] });
 
 	// Find all the ICE candidates that are "host" candidates
@@ -95,31 +96,20 @@ function getPrivateIps() {
 
 /**
 * Filters routerIps for only those that match any of the user's IPs in privateIps
-* i.e. The longest prefix matches of the router IPs with each user IP* @public
-* @method filterRouterIps 
-* @param  {Array<string>} privateIps Private IPs to match router IPs to 
-* @return {Array<string>} Router IPs that matched (one per private IP)
-*/
-function filterRouterIps(privateIps) {
-	routerIps = [];
-	privateIps.forEach(function(privateIp) {
+* i.e. The longest prefix matches of the router IPs with each user IP* @public */
+function filterRouterIps(privateIps: string[]) {
+	let routerIps: string[] = [];
+	privateIps.forEach((privateIp) => {
 		routerIps.push(longestPrefixMatch(ROUTER_IPS, privateIp));
 	});
 	return routerIps;
 };
 
-/**
- * Creates an ArrayBuffer with a compact matrix notation, i.e.
+/** Creates an ArrayBuffer with a compact matrix notation, i.e.
  * [[bits, byteOffset, value], 
  *  [8, 0, 1], //=> DataView.setInt8(0, 1)
- *  ... ]
- * @public
- * @method createArrayBuffer 
- * @param  {number} bytes Size of the ArrayBuffer in bytes
- * @param  {Array<Array<number>>} matrix Matrix of values for the ArrayBuffer
- * @return {ArrayBuffer} An ArrayBuffer constructed from matrix
- */
-function createArrayBuffer(bytes, matrix) {
+ *  ... ] */
+function createArrayBuffer(bytes: number, matrix: number[][]): ArrayBuffer {
 	var buffer = new ArrayBuffer(bytes);
 	var view = new DataView(buffer);
 	for (var i = 0; i < matrix.length; i++) {
@@ -135,14 +125,9 @@ function createArrayBuffer(bytes, matrix) {
 /**
 * Return a promise that rejects in a given time with an Error message,
 * and can call a callback function before rejecting
-* @public
-* @method countdownReject
-* @param {number} time Time in seconds
-* @param {number} msg Message to encapsulate in the rejected Error
-* @param {function} callback Function to call before rejecting
-* @return {Promise} A promise that will reject in the given time
-*/
-function countdownReject(time, msg, callback) {
+* @return {Promise} A promise that will reject in the given time */
+function countdownReject(time: number, msg: string,
+						 callback: Function) {
 	return new Promise((F, R) => {
 		setTimeout(() => {
 			if (callback !== undefined) { callback(); }
@@ -153,10 +138,7 @@ function countdownReject(time, msg, callback) {
 
 /**
 * Close the OS-level sockets and discard its Freedom object
-* @public
-* @method closeSocket
-* @param {freedom_UdpSocket.Socket} socket The socket object to close
-*/
+* @param {freedom_UdpSocket.Socket} socket The socket object to close */
 function closeSocket(socket) {
 	socket.destroy().then(() => {
 		freedom['core.udpsocket'].close(socket);
@@ -165,15 +147,9 @@ function closeSocket(socket) {
 
 /**
 * Takes a list of IP addresses and an IP address, and returns the longest prefix
-* match in the IP list with the IP
-* @public
-* @method longestPrefixMatch
-* @param {Array} ipList List of IP addresses to find the longest prefix match in
-* @param {string} matchIp The router's IP address as a string
-* @return {string} The IP from the given list with the longest prefix match
-*/
-function longestPrefixMatch(ipList, matchIp) {
-	var prefixMatches = [];
+* match in the IP list with the IP */
+function longestPrefixMatch(ipList: string[], matchIp: string): string {
+	var prefixMatches: number[] = [];
 	matchIp = ipaddr.IPv4.parse(matchIp);
 	ipList.forEach((v) => {
 		var ip = ipaddr.IPv4.parse(v);
@@ -188,19 +164,11 @@ function longestPrefixMatch(ipList, matchIp) {
 
 	// Find the argmax for prefixMatches, i.e. the index of the correct private IP
 	var maxIndex = prefixMatches.indexOf(Math.max.apply(null, prefixMatches));
-	var correctIp = ipList[maxIndex];
-	return correctIp;
+	return ipList[maxIndex];
 };
 
-/**
-* Return a random integer in a specified range
-* @public
-* @method randInt
-* @param {number} min Lower bound for the random integer
-* @param {number} max Upper bound for the random integer
-* @return {number} A random number between min and max
-*/
-function randInt(min, max) {
+/** Return a random integer in a specified range */
+function randInt(min: number, max: number): number {
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
@@ -220,14 +188,8 @@ function arrayBufferToString(buffer) {
 	return a.join('');
 };
 
-/**
-* Convert a UTF-8 string to an ArrayBuffer
-* @public
-* @method stringToArrayBuffer
-* @param {string} s String to convert
-* @return {ArrayBuffer} An ArrayBuffer containing the string data
-*/
-function stringToArrayBuffer(s) {
+/** Convert a UTF-8 string to an ArrayBuffer */
+function stringToArrayBuffer(s: string): ArrayBuffer {
 	var buffer = new ArrayBuffer(s.length);
 	var bytes = new Uint8Array(buffer);
 	for (var i = 0; i < s.length; ++i) {
@@ -236,13 +198,8 @@ function stringToArrayBuffer(s) {
 	return buffer;
 };
 
-/**
- * Returns the difference between two arrays
- * @param  {Array} listA 
- * @param  {Array} listB 
- * @return {Array} The difference array
- */
-function arrDiff(listA, listB) {
+/** Returns the difference between two arrays */
+function arrDiff(listA: any[], listB: any[]): any[] {
 	/* old code, not sure if I should delete yet
 	var diff = [];
 	listA.forEach((a) => {
@@ -253,13 +210,8 @@ function arrDiff(listA, listB) {
 	return listA.filter(val => !listB.includes(val))
 };
 
-/**
- * Adds two arrays, but doesn't include repeated elements
- * @param  {Array} listA 
- * @param  {Array} listB 
- * @return {Array} The sum of the two arrays with no duplicates
- */
-function arrAdd(listA, listB) {
+/** Adds two arrays, but doesn't include repeated elements */
+function arrAdd(listA: any[], listB: any[]): any[] {
 	/* old code, not sure if I should delete yet
 	var sum = [];
 	listA.forEach(function(a) {

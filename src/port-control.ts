@@ -4,39 +4,36 @@ import * as natPmp	from "./nat-pmp";
 import * as pcp		from "./pcp";
 import * as upnp	from "./upnp";
 
-class PortControl {
-	constructor(dispatchEvent) {
-		this.dispatchEvent = dispatchEvent;
+export interface ProtocolCompatibilityTable {
+	natPmp:			boolean;
+	pcp:			boolean;
+	upnp:			boolean;
+	upnpControlUrl: any; // fix later
+}
 
-		/** A table that keeps track of information about active Mappings */
-		this.activeMappings = {}
+export class PortControl {
+	// A table that keeps track of information about active Mappings
+	public activeMappings: Record<string, any> = {};
+	
+	// Array of previously tested working router IPs
+	// Try these first when sending NAT-PMP and PCP requests
+	public routerIpCache: string[] = [];
 
-		/** Array of previously tested working router IPs
-		 * Try these first when sending NAT-PMP and PCP requests */
-		this.routerIpCache = [];
-
-		this.protocolSupportCache = {
-			natPmp: undefined,
-			pcp: undefined,
-			upnp: undefined,
-			upnpControlUrl: undefined
-		}
+	public protocolSupportCache: ProtocolCompatibilityTable = {
+		natPmp: undefined,
+		pcp: undefined,
+		upnp: undefined,
+		upnpControlUrl: undefined
 	}
+	
+	constructor(public dispatchEvent: any) {}
 
 	/**
 	* Add a port mapping through the NAT, using probeProtocolSupport()
 	* If probeProtocolSupport() has not been previously called, i.e. 
 	* protocolSupportCache is empty, then we try each protocol until one works
-	* @public
-	* @method addMapping
-	* @param {number} intPort The internal port on the computer to map to
-	* @param {number} extPort The external port on the router to map to
-	* @param {number} lifetime Seconds that the mapping will last
-	*                          0 is infinity; handled differently per protocol
-	* @return {Promise<Mapping>} A promise for the port mapping object
-	*                            Mapping.externalPort === -1 on failure
 	**/
-	addMapping(intPort, extPort, lifetime) {
+	addMapping(intPort: number, extPort: number, lifetime: number) {
 		var _this = this;
 	
 		if (_this.protocolSupportCache.natPmp === undefined) {
@@ -73,8 +70,8 @@ class PortControl {
 		}
 	}
 
-	async asyncPF(int, ext, life) {
-		return addMapping(int, ext, life);
+	async asyncPF(int: number, ext: number, life: number) {
+		return this.addMapping(int, ext, life);
 	}
 
 	/** Delete the port mapping locally and from the router (and stop refreshes)
@@ -83,7 +80,7 @@ class PortControl {
 	* @method deleteMapping
 	* @param {number} extPort The external port of the mapping to delete
 	* @return {Promise<boolean>} True on success, false on failure **/
-	deleteMapping(extPort) {
+	deleteMapping(extPort: number) {
 		var mapping = this.activeMappings[extPort];
 		if (mapping === undefined) {
 			return Promise.resolve(false);
@@ -117,29 +114,14 @@ class PortControl {
 		});
 	}
 	
-	/**
-	* Probe if NAT-PMP is supported by the router
-	* @public
-	* @method probePmpSupport
-	* @return {Promise<boolean>} A promise for a boolean
-	*/
-	probePmpSupport() {
+	/** Probe if NAT-PMP is supported by the router */
+	probePmpSupport(): Promise<boolean> {
 		return natPmp.probeSupport(this.activeMappings, this.routerIpCache);
 	}
 	
-	/**
-	* Makes a port mapping in the NAT with NAT-PMP,
-	* and automatically refresh the mapping every two minutes
-	* @public
-	* @method addMappingPmp
-	* @param {number} intPort The internal port on the computer to map to
-	* @param {number} extPort The external port on the router to map to
-	* @param {number} lifetime Seconds that the mapping will last
-	*                          0 is infinity, i.e. a refresh every 24 hours
-	* @return {Promise<Mapping>} A promise for the port mapping object
-	*                            Mapping.externalPort === -1 on failure
-	*/
-	addMappingPmp(intPort, extPort, lifetime) {
+	/** Makes a port mapping in the NAT with NAT-PMP,
+	 *	and automatically refresh the mapping every two minutes */
+	addMappingPmp(intPort: number, extPort: number, lifetime: number) {
 		return natPmp.addMapping(intPort, extPort, lifetime,
 								 this.activeMappings, this.routerIpCache);
 	}
@@ -147,12 +129,8 @@ class PortControl {
 	/**
 	* Deletes a port mapping in the NAT with NAT-PMP
 	* The port mapping must have a Mapping object in this.activeMappings
-	* @public
-	* @method deleteMappingPmp
-	* @param {number} extPort The external port of the mapping to delete
-	* @return {Promise<boolean>} True on success, false on failure
 	*/
-	deleteMappingPmp(extPort) {
+	deleteMappingPmp(extPort: number): Promise<boolean> {
 		var mapping = this.activeMappings[extPort];
 		if (mapping === undefined || mapping.protocol !== 'natPmp') {
 			return Promise.resolve(false);
@@ -162,10 +140,7 @@ class PortControl {
 	
 	/**
 	* Probe if PCP is supported by the router
-	* @public
-	* @method probePcpSupport
-	* @return {Promise<boolean>} A promise for a boolean
-	*/
+	* @return {Promise<boolean>} A promise for a boolean */
 	probePcpSupport() {
 		return pcp.probeSupport(this.activeMappings, this.routerIpCache);
 	}
@@ -173,28 +148,16 @@ class PortControl {
 	/**
 	* Makes a port mapping in the NAT with PCP,
 	* and automatically refresh the mapping every two minutes
-	* @public
-	* @method addMappingPcp
-	* @param {number} intPort The internal port on the computer to map to
-	* @param {number} extPort The external port on the router to map to
-	* @param {number} lifetime Seconds that the mapping will last
-	*                          0 is infinity, i.e. a refresh every 24 hours
 	* @return {Promise<Mapping>} A promise for the port mapping object 
-	*                            mapping.externalPort is -1 on failure
-	*/
-	addMappingPcp(intPort, extPort, lifetime) {
+	*                            mapping.externalPort is -1 on failure */
+	addMappingPcp(intPort: number, extPort: number, lifetime: number) {
 		return pcp.addMapping(intPort, extPort, lifetime,
 							  this.activeMappings, this.routerIpCache);
 	}
 	
 	/** Deletes a port mapping in the NAT with PCP
-	* The port mapping must have a Mapping object in this.activeMappings
-	* @public
-	* @method deleteMappingPcp
-	* @param {number} extPort The external port of the mapping to delete
-	* @return {Promise<boolean>} True on success, false on failure
-	*/
-	deleteMappingPcp(extPort) {
+	* The port mapping must have a Mapping object in this.activeMappings */
+	deleteMappingPcp(extPort: number): Promise<boolean> {
 		var mapping = this.activeMappings[extPort];
 		if (mapping === undefined || mapping.protocol !== 'pcp') {
 			return Promise.resolve(false);
@@ -212,29 +175,18 @@ class PortControl {
 	}
 	
 	/** Makes a port mapping in the NAT with UPnP AddPortMapping
-	* @public
-	* @method addMappingUpnp
-	* @param {number} intPort The internal port on the computer to map to
-	* @param {number} extPort The external port on the router to map to
-	* @param {number} lifetime Seconds that the mapping will last
-	*                          0 is infinity; a static AddPortMapping request
-	* @param {string=} controlUrl Optional: a control URL for the router
 	* @return {Promise<Mapping>} A promise for the port mapping object 
-	*                               mapping.externalPort is -1 on failure
-	*/
-	addMappingUpnp(intPort, extPort, lifetime, controlUrl) {
+	*                               mapping.externalPort is -1 on failure */
+	addMappingUpnp(intPort: number,	extPort: number,
+					lifetime: number, controlUrl?: string) {
 		return upnp.addMapping(intPort, extPort, lifetime,
 							   this.activeMappings, controlUrl);
 	}
 	
 	/** Deletes a port mapping in the NAT with UPnP DeletePortMapping
 	* The port mapping must have a Mapping object in this.activeMappings
-	* @public
-	* @method deleteMappingUpnp
-	* @param {number} extPort The external port of the mapping to delete
-	* @return {Promise<boolean>} True on success, false on failure
-	*/
-	deleteMappingUpnp(extPort) {
+	* @return {Promise<boolean>} True on success, false on failure */
+	deleteMappingUpnp(extPort: number) {
 		var mapping = this.activeMappings[extPort];
 		if (mapping === undefined || mapping.protocol !== 'upnp') {
 			return Promise.resolve(false);
@@ -262,50 +214,32 @@ class PortControl {
 		return Promise.resolve(this.activeMappings);
 	};
 	
-	/**
-	* Return the router IP cache
-	* @public
-	* @method getRouterIpCache
-	* @return {Promise<Array<string>>} A promise that resolves to routerIpCache
-	*/
-	getRouterIpCache() {
+	/** Return the router IP cache */
+	getRouterIpCache(): Promise<string[]> {
 		return Promise.resolve(this.routerIpCache);
 	}
 	
-	/**
-	 * Return the protocol support cache
-	 * @public
-	 * @method getProtocolSupportCache
-	 * @return {Promise<protocolSupportCache>} Resolves to protocolSupportCache
-	 */
+	/** Resolve to protocol support cache */
 	getProtocolSupportCache() {
 		return Promise.resolve(this.protocolSupportCache);
 	}
 	
-	/**
-	* Return the private IP addresses of the computer
-	* @public
-	* @method getPrivateIps
+	/** Return the private IP addresses of the computer
 	* @return {Promise<Array<string>>} A promise that fulfills with a list of IPs,
-	*                                  or rejects on timeout
-	*/
+	*                                  or rejects on timeout */
 	getPrivateIps() {
 		return utils.getPrivateIps();
 	}
 	
-	/**
-	* Deletes all the currently active port mappings
-	* @public
-	* @method close
-	*/
+	/** Deletes all the currently active port mappings */
 	close() {
 		var _this = this;
 	
 		return new Promise((F, R) => {
 			// Get all the keys (extPorts) of activeMappings
-			var extPorts = [];
-			_this.activeMappings.forEach((_, extPort) => {
-				if (Object.hasOwn(_this.activeMappings, extPort)) {
+			var extPorts: number[] = [];
+			_this.activeMappings.forEach((_: any, extPort: number) => {
+				if (_this.activeMappings.hasOwnProperty(extPort)) {
 					extPorts.push(extPort);
 				}
 			});
@@ -318,5 +252,4 @@ class PortControl {
 	}
 }
 
-if (typeof freedom !== 'undefined') freedom().providePromises(PortControl);
-export {PortControl}
+//if (typeof freedom !== 'undefined') freedom().providePromises(PortControl);
